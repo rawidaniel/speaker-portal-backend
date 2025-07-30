@@ -18,6 +18,12 @@ enum Role {
   ADMIN
 }
 
+enum RSVPStatus {
+  YES
+  NO
+  MAYBE
+}
+
 model User {
   id          String    @id @default(uuid())
   email       String    @unique
@@ -32,6 +38,7 @@ model User {
   deletedAt   DateTime?
 
   events Event[] @relation("HostEvents")
+  rsvps  RSVP[]  @relation("UserRSVPs")
 }
 
 model Event {
@@ -47,4 +54,17 @@ model Event {
 
   creatorId String
   creator   User   @relation("HostEvents", fields: [creatorId], references: [id])
+  rsvps     RSVP[] @relation("EventRSVPs")
+}
+
+model RSVP {
+  id      String     @id @default(uuid())
+  status  RSVPStatus
+  userId  String
+  eventId String
+
+  user  User  @relation("UserRSVPs", fields: [userId], references: [id])
+  event Event @relation("EventRSVPs", fields: [eventId], references: [id])
+
+  @@unique([userId, eventId])
 }

@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, RSVPStatus } from "@prisma/client";
 import { NextFunction, Response } from "express";
 import Joi from "joi";
 import catchAsync from "../utils/catchAsync";
@@ -97,3 +97,73 @@ async function createZoomMeeting(
 
   return response.data; // contains join_url, start_url, etc.
 }
+
+// ========== CONFIRM EVENT ==========
+export const confirmEvent = catchAsync(
+  async (req: any, res: Response, next: NextFunction) => {
+    const revpSchema = Joi.object({
+      status: Joi.string().valid("YES", "NO", "MAYBE").required(),
+    });
+    const eventId = req.params.id;
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      return next(new AppError("Event not found", 404));
+    }
+
+    const { error, value } = revpSchema.validate(req.body);
+
+    if (error) {
+      // Remove all quotes and backslashes from Joi error message
+      const rawMsg = error.details[0].message;
+      const cleanMsg = rawMsg.replace(/['"\\]/g, "");
+      return next(new AppError(cleanMsg, 400));
+    }
+
+    const eventAlreadyConfirmed = await prisma.rSVP.findUnique({
+      where: {
+        userId_eventId: {
+          userId: req.user.id,
+          eventId: event.id,
+        },
+      },
+    });
+
+    if (eventAlreadyConfirmed) {
+      return next(new AppError("You have already confirmed this event", 400));
+    }
+
+    const confirmEvent = await prisma.rSVP.create({
+      data: {
+        status: value.status as RSVPStatus,
+        user: {
+          connect: { id: req.user.id }, // Connect the RSVP to the user
+        },
+        event: {
+          connect: { id: eventId }, // Connect the RSVP to the event
+        },
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        event: {
+          select: {
+            id: true,
+            title: true,
+            dateTime: true,
+            zoomLink: true,
+          },
+        },
+      },
+    });
+
+    res.status(200).json(confirmEvent);
+  }
+);
