@@ -1,0 +1,16 @@
+# compiled output
+/node_modules
+/output
+/dist
+
+# dotenv environment variable files
+*.env
+.cache
+
+# IDE - VSCode
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+/src/generated/prisma
