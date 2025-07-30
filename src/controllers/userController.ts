@@ -49,7 +49,6 @@ const upload = multer({
 // ========== UPDATE  USER PROFILE ==========
 export const updateProfile = catchAsync(
   async (req: any, res: Response, next: NextFunction) => {
-    console.log({ b: req.body });
     const userSchema = Joi.object({
       name: Joi.string().min(3).optional(),
       bio: Joi.string().optional(),
@@ -68,7 +67,6 @@ export const updateProfile = catchAsync(
     }
     const { name, bio, photoUrl, contactInfo } = value;
     const user = req.user;
-    console.log({ name, bio, photoUrl, contactInfo });
     // If a file was uploaded, set photoUrl to the file path
     if (req.file) {
       // Store the relative path for public access

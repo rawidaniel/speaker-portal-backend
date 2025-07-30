@@ -2,6 +2,7 @@ import express from "express";
 import path from "path";
 import authRoutes from "./routes/authRoute";
 import userRoutes from "./routes/userRoute";
+import eventRoutes from "./routes/eventRoute";
 
 import globalErrorHandler from "./controllers/errorController";
 import cors from "cors";
@@ -18,6 +19,7 @@ app.use("/public", express.static(path.join(__dirname, "../public")));
 // Register routes
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
+app.use("/api/event", eventRoutes);
 
 // Global error handler
 app.use(globalErrorHandler);

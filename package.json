@@ -36,6 +36,7 @@
     "@prisma/client": "^6.9.0",
     "@prisma/extension-accelerate": "^2.0.1",
     "@types/joi": "^17.2.2",
+    "axios": "^1.11.0",
     "bcrypt": "^6.0.0",
     "bull": "^4.16.5",
     "bullmq": "^5.56.4",
