@@ -229,6 +229,7 @@ export const getEventSpeakerResponse = catchAsync(
             select: {
               id: true,
               name: true,
+              email: true,
             },
           },
         },
