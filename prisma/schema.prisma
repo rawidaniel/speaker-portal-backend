@@ -66,5 +66,9 @@ model RSVP {
   user  User  @relation("UserRSVPs", fields: [userId], references: [id])
   event Event @relation("EventRSVPs", fields: [eventId], references: [id])
 
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime?
+
   @@unique([userId, eventId])
 }

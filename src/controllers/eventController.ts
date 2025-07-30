@@ -5,6 +5,7 @@ import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/appError";
 import axios from "axios";
 import qs from "qs";
+import { paginator } from "../utils/paginator";
 
 const prisma = new PrismaClient();
 
@@ -104,6 +105,7 @@ export const confirmEvent = catchAsync(
     const revpSchema = Joi.object({
       status: Joi.string().valid("YES", "NO", "MAYBE").required(),
     });
+
     const eventId = req.params.id;
     const event = await prisma.event.findUnique({
       where: { id: eventId },
@@ -165,5 +167,74 @@ export const confirmEvent = catchAsync(
     });
 
     res.status(200).json(confirmEvent);
+  }
+);
+
+// ========== GET ALL EVENT ==========
+export const getEvents = catchAsync(
+  async (req: any, res: Response, next: NextFunction) => {
+    const request = {
+      page: req.query.page ? Number(req.query.page) : 1,
+      itemsPerPage: req.query.itemsPerPage
+        ? Number(req.query.itemsPerPage)
+        : 10,
+    };
+
+    const paginate = paginator({
+      itemsPerPage: request.itemsPerPage,
+      page: request.page,
+    });
+
+    const events = await paginate(prisma.event, { page: request.page });
+
+    res.status(200).json(events);
+  }
+);
+
+// ========== GET EVENT SPEAKER RESPONSE ==========
+export const getEventSpeakerResponse = catchAsync(
+  async (req: any, res: Response, next: NextFunction) => {
+    const eventId = req.params.id;
+
+    const request = {
+      page: req.query.page ? Number(req.query.page) : 1,
+      itemsPerPage: req.query.itemsPerPage
+        ? Number(req.query.itemsPerPage)
+        : 10,
+    };
+
+    const event = await prisma.event.findUnique({
+      where: { id: eventId },
+    });
+
+    if (!event) {
+      return next(new AppError("Event not found", 404));
+    }
+
+    const paginate = paginator({
+      itemsPerPage: request.itemsPerPage,
+      page: request.page,
+    });
+
+    const events = await paginate(
+      prisma.rSVP,
+      { page: request.page },
+      {
+        where: {
+          eventId: req.params.id,
+          deletedAt: null,
+        },
+        include: {
+          user: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+        },
+      }
+    );
+
+    res.status(200).json(events);
   }
 );
