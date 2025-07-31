@@ -1,11 +1,14 @@
 import { PrismaClient, RSVPStatus } from "@prisma/client";
-import { NextFunction, Response } from "express";
+import e, { NextFunction, Response } from "express";
 import Joi from "joi";
 import catchAsync from "../utils/catchAsync";
 import AppError from "../utils/appError";
 import axios from "axios";
 import qs from "qs";
 import { paginator } from "../utils/paginator";
+import { CronJob } from "cron";
+import nodemailer from "nodemailer";
+import type { Options as SMTPTransportOptions } from "nodemailer/lib/smtp-transport";
 
 const prisma = new PrismaClient();
 
@@ -253,3 +256,83 @@ export const getEventSpeakerResponse = catchAsync(
     res.status(200).json(events);
   }
 );
+
+const sendEmailJob = CronJob.from({
+  cronTime: "*/1 * * * *",
+  onTick: async function () {
+    const events = await prisma.event.findMany({
+      where: {
+        dateTime: {
+          gte: new Date(), // Get events that are scheduled in the future
+        },
+      },
+      orderBy: {
+        dateTime: "asc", // Order by dateTime ascending
+      },
+      include: {
+        rsvps: {
+          select: {
+            user: {
+              select: {
+                email: true,
+              },
+            },
+          },
+        },
+      },
+    });
+    if (events.length === 0) {
+      console.log("No upcoming events found.");
+      return;
+    }
+    // loop through each event and send an email
+    for (const event of events) {
+      console.log(event.rsvps);
+      if (event.rsvps.length === 0) {
+        continue; // Skip sending email if no RSVPs
+      }
+      const subject = `Upcoming Event: ${event.title}`;
+      const message = `Hello,\n\nYou have an upcoming event scheduled:\n\nTitle: ${event.title}\nDate and Time: ${new Date(event.dateTime).toLocaleString()}\nDuration: ${event.duration} minutes\nZoom Link: ${event.zoomLink}\n\nPlease make sure to join the meeting on time.\n\nBest regards,\nYour Event Team`;
+      // Send email to all users who have RSVP'd to the event
+      for (const rsvp of event.rsvps) {
+        const to = rsvp.user.email;
+        await sendEmail(to, subject, message);
+      }
+    }
+    // console.log("You will see this message every second");
+  },
+  start: true,
+  timeZone: "UTC",
+});
+
+sendEmailJob.start();
+
+// Function to send email via SMTP
+const sendEmail = async (to: String, subject: string, message: string) => {
+  try {
+    // Create a transporter (connection to the email server)
+    const transporter = nodemailer.createTransport({
+      host: process.env.HOST,
+      port: process.env.MAIL_PORT,
+      secure: false,
+      auth: {
+        user: process.env.MAILER_USER,
+        pass: process.env.PASSWORD,
+      },
+    } as SMTPTransportOptions);
+
+    // Define the email content
+    const mailOptions = {
+      from: process.env.FROM,
+      to: to,
+      subject: subject,
+      text: message,
+    };
+
+    // Send the email
+    const info = await transporter.sendMail(mailOptions as any);
+    console.log("Email sent:", info.messageId);
+  } catch (error) {
+    console.error("Error sending email:", error);
+  }
+};
