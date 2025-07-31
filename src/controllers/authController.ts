@@ -137,3 +137,13 @@ const verifyToken = (token: string): Promise<any> => {
     });
   });
 };
+
+// ========== GET USER INFORMATION ==========
+export const getMe = catchAsync(
+  async (req: any, res: Response, next: NextFunction) => {
+    const user = await prisma.user.findUnique({ where: { id: req.user.id } });
+    if (!user) return next(new AppError("User don't exist", 400));
+
+    res.status(200).json(user);
+  }
+);
