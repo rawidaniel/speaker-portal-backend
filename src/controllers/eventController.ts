@@ -13,7 +13,7 @@ const prisma = new PrismaClient();
 export const createEvent = catchAsync(
   async (req: any, res: Response, next: NextFunction) => {
     const eventCreateSchema = Joi.object({
-      title: Joi.string().min(5).required(),
+      title: Joi.string().required(),
       description: Joi.string().required(),
       dateTime: Joi.date().iso().required(),
       duration: Joi.number().integer().min(1).required(),
