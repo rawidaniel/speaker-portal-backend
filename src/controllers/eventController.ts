@@ -189,6 +189,9 @@ export const getEvents = catchAsync(
       prisma.event,
       { page: request.page },
       {
+        where: {
+          creatorId: req.user.id,
+        },
         orderBy: {
           createdAt: "desc",
         },
