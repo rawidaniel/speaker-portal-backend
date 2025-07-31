@@ -14,9 +14,3 @@ services:
       - ./data/postgresql:/var/lib/postgresql/data
     ports:
       - "5432:5432"
-  redis:
-    image: redis:7
-    container_name: csv-redis
-    ports:
-      - "6379:6379"
-    restart: unless-stopped
