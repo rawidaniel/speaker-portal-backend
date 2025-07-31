@@ -185,7 +185,15 @@ export const getEvents = catchAsync(
       page: request.page,
     });
 
-    const events = await paginate(prisma.event, { page: request.page });
+    const events = await paginate(
+      prisma.event,
+      { page: request.page },
+      {
+        orderBy: {
+          createdAt: "desc",
+        },
+      }
+    );
 
     res.status(200).json(events);
   }
@@ -232,6 +240,9 @@ export const getEventSpeakerResponse = catchAsync(
               email: true,
             },
           },
+        },
+        orderBy: {
+          createdAt: "desc",
         },
       }
     );
